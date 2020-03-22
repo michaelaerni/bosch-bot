@@ -23,7 +23,7 @@ namespace BoschBot.CommandModules
 
         public MatthiasModule(
             IConfiguration configuration,
-            ILogger<BoschModule> logger,
+            ILogger<MatthiasModule> logger,
             IMemoryCache cache
         )
         {

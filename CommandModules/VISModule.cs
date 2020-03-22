@@ -13,7 +13,10 @@ namespace BoschBot.CommandModules
         private readonly ILogger logger;
         private Random random;
 
-        public VISModule(IConfiguration configuration, ILogger<BoschModule> logger)
+        public VISModule(
+            IConfiguration configuration,
+            ILogger<VISModule> logger
+        )
         {
             this.configuration = configuration;
             this.logger = logger;
