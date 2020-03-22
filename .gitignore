@@ -1,5 +1,5 @@
-# Original bosch image, very large
-/bosch.jpg
+# Ignore all images
+/images/*
 
 
 # Created by https://www.gitignore.io/api/linux,dotnetcore,visualstudiocode
