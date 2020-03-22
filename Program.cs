@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using BoschBot.Commands;
+using Discord.Commands;
+using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace BoschBot
 {
@@ -10,38 +15,77 @@ namespace BoschBot
     {
         static async Task Main(string[] args)
         {
-            await new Program().Run();
+            await new Program().Run(args);
         }
 
-        public async Task Run()
+        public async Task Run(string[] args)
         {
-            Console.WriteLine("Loading font");
-            var memeFont = SixLabors.Fonts.SystemFonts.CreateFont("Liberation Sans", 42, SixLabors.Fonts.FontStyle.Bold);
+            // FIXME: Could refactor this into a Startup class
 
-            Console.WriteLine("Loading matthias image");
-            using(var matthiasImage = SixLabors.ImageSharp.Image.Load("matthias.jpg"))
+            // Setup configuration
+            IConfiguration configuration = SetupConfiguration(args);
+
+            // Setup dependency injection
+            ServiceProvider serviceProvider = RegisterServices(configuration);
+            var log = serviceProvider.GetService<ILogger<Program>>();
+
+            try
             {
-                Console.WriteLine("Loading bosch image");
-                using(var boschImage = SixLabors.ImageSharp.Image.Load("bosch_small.jpg"))
+                // TODO: Actually use dependency injection for bot
+                log.LogInformation("Loading ressources");
+                var memeFont = SixLabors.Fonts.SystemFonts.CreateFont("Liberation Sans", 42, SixLabors.Fonts.FontStyle.Bold);
+                using(var matthiasImage = SixLabors.ImageSharp.Image.Load("matthias.jpg"))
                 {
-                    var commandHandlers = new Dictionary<string, ICommandHandler>()
+                    using(var boschImage = SixLabors.ImageSharp.Image.Load("bosch_small.jpg"))
                     {
-                        ["matthias"] = new MatthiasCommandHandler(memeFont, matthiasImage),
-                        ["bosch"] = new BoschCommandHandler(boschImage),
-                        ["vis"] = new VISCommandHandler()
-                    };
+                        var commandHandlers = new Dictionary<string, ICommandHandler>()
+                        {
+                            ["matthias"] = new MatthiasCommandHandler(memeFont, matthiasImage),
+                            ["bosch"] = new BoschCommandHandler(boschImage),
+                            ["vis"] = new VISCommandHandler()
+                        };
 
-                    var bot = new Bot(new ReadOnlyDictionary<string, ICommandHandler>(commandHandlers));
-                    
-                    Console.WriteLine("Starting bot");
-                    // TODO: Logging
+                        var bot = new Bot(new ReadOnlyDictionary<string, ICommandHandler>(commandHandlers));
+                        // TODO: Logging everywhere
 
-                    await bot.StartAsync();
+                        log.LogInformation("Starting bot");
 
-                    // Delay until closed
-                    await Task.Delay(-1);
+                        await bot.StartAsync();
+
+                        // Delay until closed
+                        await Task.Delay(-1);
+                    }
                 }
             }
+            catch(Exception ex)
+            {
+                log.LogError(ex, "Unhandled exception");
+            }
+            finally
+            {
+                await serviceProvider.DisposeAsync();
+            }
+        }
+
+        private ServiceProvider RegisterServices(IConfiguration configuration)
+        {
+            var serviceCollection = new ServiceCollection();
+
+            serviceCollection.AddSingleton(configuration);
+            serviceCollection.AddLogging(config => config.AddConsole());
+            serviceCollection.AddSingleton(new DiscordSocketClient());
+            serviceCollection.AddSingleton(new CommandService());
+
+            return serviceCollection.BuildServiceProvider();
+        }
+
+        private IConfiguration SetupConfiguration(string[] args)
+        {
+            return new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddEnvironmentVariables()
+                .AddCommandLine(args)
+                .Build();
         }
     }
 }
