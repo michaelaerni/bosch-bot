@@ -81,6 +81,7 @@ namespace BoschBot
                 case CommandError.BadArgCount:
                 case CommandError.MultipleMatches:
                 case CommandError.ParseFailed:
+                case CommandError.UnmetPrecondition:
                     errorMessage = result.ErrorReason;
                     break;
                 default:
