@@ -56,6 +56,7 @@ namespace BoschBot
             return new ServiceCollection()
                 .AddSingleton(configuration)
                 .AddLogging(config => config.AddConsole())
+                .AddMemoryCache()
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlerService>()
