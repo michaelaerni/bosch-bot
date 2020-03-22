@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Threading.Tasks;
-using BoschBot.Commands;
+﻿using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -21,68 +18,54 @@ namespace BoschBot
         public async Task Run(string[] args)
         {
             // FIXME: Could refactor this into a Startup class
+            // FIXME: Try options instead of configuration at some point
+            // FIXME: Error handling
 
             // Setup configuration
             IConfiguration configuration = SetupConfiguration(args);
 
             // Setup dependency injection
-            ServiceProvider serviceProvider = RegisterServices(configuration);
-            var log = serviceProvider.GetService<ILogger<Program>>();
-
-            try
+            using(ServiceProvider serviceProvider = RegisterServices(configuration))
             {
-                // TODO: Actually use dependency injection for bot
-                log.LogInformation("Loading ressources");
-                var memeFont = SixLabors.Fonts.SystemFonts.CreateFont("Liberation Sans", 42, SixLabors.Fonts.FontStyle.Bold);
-                using(var matthiasImage = SixLabors.ImageSharp.Image.Load("images/matthias.jpg"))
-                {
-                    using(var boschImage = SixLabors.ImageSharp.Image.Load("images/bosch_small.jpg"))
-                    {
-                        var commandHandlers = new Dictionary<string, ICommandHandler>()
-                        {
-                            ["matthias"] = new MatthiasCommandHandler(memeFont, matthiasImage),
-                            ["bosch"] = new BoschCommandHandler(boschImage),
-                            ["vis"] = new VISCommandHandler()
-                        };
+                var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
-                        var bot = new Bot(new ReadOnlyDictionary<string, ICommandHandler>(commandHandlers));
-                        // TODO: Logging everywhere
+                // Configure command handler
+                var commandHandlerService = serviceProvider.GetRequiredService<CommandHandlerService>();
+                await commandHandlerService.InitializeAsync();
 
-                        log.LogInformation("Starting bot");
+                var discordClient = serviceProvider.GetRequiredService<DiscordSocketClient>();
 
-                        await bot.StartAsync();
+                // Configure logging
+                // TODO: Improve this to make sure log levels etc are respected and the correct targets are logged. This is very crude here
+                discordClient.Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
+                serviceProvider.GetRequiredService<CommandService>().Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
 
-                        // Delay until closed
-                        await Task.Delay(-1);
-                    }
-                }
-            }
-            catch(Exception ex)
-            {
-                log.LogError(ex, "Unhandled exception");
-            }
-            finally
-            {
-                await serviceProvider.DisposeAsync();
+                // Connect and start client
+                logger.LogInformation("Connecting to Discord");
+                await discordClient.LoginAsync(TokenType.Bot, configuration.GetValue<string>("Core:loginToken"));
+                logger.LogInformation("Starting client");
+                await discordClient.StartAsync();
+
+                // Run until closed
+                await Task.Delay(-1);
             }
         }
 
         private ServiceProvider RegisterServices(IConfiguration configuration)
         {
-            var serviceCollection = new ServiceCollection();
-
-            serviceCollection.AddSingleton(configuration);
-            serviceCollection.AddLogging(config => config.AddConsole());
-            serviceCollection.AddSingleton(new DiscordSocketClient());
-            serviceCollection.AddSingleton(new CommandService());
-
-            return serviceCollection.BuildServiceProvider();
+            return new ServiceCollection()
+                .AddSingleton(configuration)
+                .AddLogging(config => config.AddConsole())
+                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton<CommandService>()
+                .AddSingleton<CommandHandlerService>()
+                .BuildServiceProvider();
         }
 
         private IConfiguration SetupConfiguration(string[] args)
         {
             return new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .AddCommandLine(args)
                 .Build();

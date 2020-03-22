@@ -1,42 +1,54 @@
+
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Discord.WebSocket;
+using Discord.Commands;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
 
-namespace BoschBot.Commands
+namespace BoschBot.CommandModules
 {
-    public class MatthiasCommandHandler : ICommandHandler
+    public class MatthiasModule : ModuleBase<SocketCommandContext>, IDisposable
     {
-        private readonly Font memeFont;
+        private readonly IConfiguration configuration;
+        private readonly ILogger logger;
+        private Random random;
         private readonly Image matthiasImage;
+        private readonly Font memeFont;
 
-        public MatthiasCommandHandler(Font memeFont, Image matthiasImage)
+        public MatthiasModule(IConfiguration configuration, ILogger<BoschModule> logger)
         {
-            this.memeFont = memeFont;
-            this.matthiasImage = matthiasImage;
+            this.configuration = configuration;
+            this.logger = logger;
+            this.random = new Random();
+            // TODO: This file is loaded on every request, cache it!
+            this.matthiasImage = Image.Load("images/matthias.jpg"); // TODO: Use config value or handle differently
+            this.memeFont = SystemFonts.CreateFont("Liberation Sans", 42, SixLabors.Fonts.FontStyle.Bold); // TODO: Use config value or handle differently
         }
 
-        public async Task HandleCommandAsync(SocketMessage message, string args, DiscordSocketClient client)
+        [Command("matthias")]
+        public async Task MemeAsync([Remainder] string caption)
         {
-            Console.WriteLine("Handling matthias command");
+            logger.LogDebug("Handling meme command");
 
-            string strippedArgs = args.Trim();
-            // TODO: Remove all double newlines and generally sanitize args
-            if(strippedArgs.Length == 0)
+            string sanitizedCaption = caption.Trim(); // TODO: Sanitize more/better
+
+            if(sanitizedCaption.Length == 0)
             {
-                await message.Channel.SendMessageAsync("Dude, I need a meme caption!");
+                await ReplyAsync("Dude, I need a meme caption!");
             }
-            else if(strippedArgs.Length > 400)
+            else if(sanitizedCaption.Length > 400)
             {
-                await message.Channel.SendMessageAsync("Sorry but at most 400 characters.");
+                await ReplyAsync("Sorry but at most 400 characters.");
             }
             else
             {
                 // TODO: Refactor this mess
+                // TODO: Make things configurable
 
                 var textGraphicOptions = new TextGraphicsOptions(true)
                 {
@@ -47,7 +59,7 @@ namespace BoschBot.Commands
 
                 // Determine text block height
                 var textBounds = TextMeasurer.Measure(
-                    strippedArgs,
+                    sanitizedCaption,
                     new RendererOptions(memeFont)
                     {
                         WrappingWidth = textGraphicOptions.WrapTextWidth
@@ -77,7 +89,7 @@ namespace BoschBot.Commands
                     ctx => ctx
                     .Resize(initialResizeOptions)
                     .BackgroundColor(SixLabors.ImageSharp.Color.White)
-                    .DrawText(textGraphicOptions, strippedArgs, memeFont, SixLabors.ImageSharp.Color.Black, new PointF(75, 25))
+                    .DrawText(textGraphicOptions, sanitizedCaption, memeFont, SixLabors.ImageSharp.Color.Black, new PointF(75, 25))
                     .Resize(finalResizeOptions)
                 );
 
@@ -87,13 +99,18 @@ namespace BoschBot.Commands
                     memeImage.SaveAsJpeg(stream);
                     stream.Seek(0, SeekOrigin.Begin);
 
-                    await message.Channel.SendFileAsync(
+                    await Context.Channel.SendFileAsync(
                         stream: stream,
                         filename: "meme.jpg",
                         text: "Enjoy!"
                     );
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            matthiasImage?.Dispose();
         }
     }
 }
