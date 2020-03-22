@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -39,6 +40,9 @@ namespace BoschBot
                 // TODO: Improve this to make sure log levels etc are respected and the correct targets are logged. This is very crude here
                 discordClient.Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
                 serviceProvider.GetRequiredService<CommandService>().Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
+
+                // Configure initialization handlers
+                discordClient.Ready += async () => await discordClient.SetGameAsync("with fire");
 
                 // Connect and start client
                 logger.LogInformation("Connecting to Discord");
