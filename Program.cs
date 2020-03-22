@@ -34,9 +34,9 @@ namespace BoschBot
                 // TODO: Actually use dependency injection for bot
                 log.LogInformation("Loading ressources");
                 var memeFont = SixLabors.Fonts.SystemFonts.CreateFont("Liberation Sans", 42, SixLabors.Fonts.FontStyle.Bold);
-                using(var matthiasImage = SixLabors.ImageSharp.Image.Load("matthias.jpg"))
+                using(var matthiasImage = SixLabors.ImageSharp.Image.Load("images/matthias.jpg"))
                 {
-                    using(var boschImage = SixLabors.ImageSharp.Image.Load("bosch_small.jpg"))
+                    using(var boschImage = SixLabors.ImageSharp.Image.Load("images/bosch_small.jpg"))
                     {
                         var commandHandlers = new Dictionary<string, ICommandHandler>()
                         {
