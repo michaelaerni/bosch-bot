@@ -20,6 +20,7 @@ namespace BoschBot.CommandModules
         private readonly IMemoryCache cache;
         private Random random;
         private readonly Font memeFont;
+        private readonly Font superMemeFont;
 
         public MatthiasModule(
             IConfiguration configuration,
@@ -32,13 +33,25 @@ namespace BoschBot.CommandModules
             this.cache = cache;
             this.random = new Random();
             this.memeFont = SystemFonts.CreateFont("Liberation Sans", 42, SixLabors.Fonts.FontStyle.Bold); // TODO: Use config value or handle differently
+            this.superMemeFont = SystemFonts.CreateFont("Comic Relief", 42, SixLabors.Fonts.FontStyle.Bold); // TODO: Use config value or handle differently
         }
 
         [Command("matthias")]
         public async Task MemeAsync([Remainder] string caption)
         {
             logger.LogDebug("Handling meme command");
+            await HandleMemeRequest(caption, memeFont);
+        }
 
+        [Command("matthisans")]
+        public async Task SuperMemeAsync([Remainder] string caption)
+        {
+            logger.LogDebug("Handling super meme command");
+            await HandleMemeRequest(caption, superMemeFont);
+        }
+
+        private async Task HandleMemeRequest(string caption, Font font)
+        {
             using(Context.Channel.EnterTypingState())
             {
                 var matthiasImage = await LoadMatthiasImage();
@@ -68,7 +81,7 @@ namespace BoschBot.CommandModules
                     // Determine text block height
                     var textBounds = TextMeasurer.Measure(
                         sanitizedCaption,
-                        new RendererOptions(memeFont)
+                        new RendererOptions(font)
                         {
                             WrappingWidth = textGraphicOptions.WrapTextWidth
                         }
@@ -97,7 +110,7 @@ namespace BoschBot.CommandModules
                         ctx => ctx
                         .Resize(initialResizeOptions)
                         .BackgroundColor(SixLabors.ImageSharp.Color.White)
-                        .DrawText(textGraphicOptions, sanitizedCaption, memeFont, SixLabors.ImageSharp.Color.Black, new PointF(75, 25))
+                        .DrawText(textGraphicOptions, sanitizedCaption, font, SixLabors.ImageSharp.Color.Black, new PointF(75, 25))
                         .Resize(finalResizeOptions)
                     );
 
