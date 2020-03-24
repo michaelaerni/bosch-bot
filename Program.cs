@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using BoschBot.Services;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -62,14 +63,22 @@ namespace BoschBot
 
         private ServiceProvider RegisterServices(IConfiguration configuration)
         {
-            return new ServiceCollection()
-                .AddSingleton(configuration)
-                .AddLogging(config => config.AddConsole())
-                .AddMemoryCache()
-                .AddSingleton<DiscordSocketClient>()
-                .AddSingleton<CommandService>()
-                .AddSingleton<CommandHandlerService>()
-                .BuildServiceProvider();
+            var services = new ServiceCollection();
+
+            services.AddSingleton(configuration);
+
+            services.AddLogging(config => config.AddConsole());
+
+            services.AddMemoryCache();
+
+            services.AddSingleton<DiscordSocketClient>();
+            services.AddSingleton<CommandService>();
+            services.AddSingleton<CommandHandlerService>();
+
+            // FIXME: Define retry policy etc, see https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests
+            services.AddHttpClient<ITexRenderService, TexRenderService>();
+
+            return services.BuildServiceProvider();
         }
 
         private IConfiguration SetupConfiguration(string[] args)
