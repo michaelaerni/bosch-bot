@@ -1,5 +1,8 @@
 Bosch Bot
 =========
+
+![Self Portrait of Bosch](doc/Jheronimus_Bosch.jpg)
+
 Bosch Bot is a Discord bot, written mostly for fun to pass the time at home.
 It is named after famous Dutch painter *Hieronymus Bosch*
 whose famous painting *The Garden of Earthly Delights*
