@@ -26,32 +26,37 @@ namespace BoschBot
             IConfiguration configuration = SetupConfiguration(args);
 
             // Setup dependency injection
-            using(ServiceProvider serviceProvider = RegisterServices(configuration))
+            using(ServiceProvider rootProvider = RegisterServices(configuration))
             {
-                var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                using(var serviceScope = rootProvider.CreateScope())
+                {
+                    var services = serviceScope.ServiceProvider;
 
-                // Configure command handler
-                var commandHandlerService = serviceProvider.GetRequiredService<CommandHandlerService>();
-                await commandHandlerService.InitializeAsync();
+                    var logger = services.GetRequiredService<ILogger<Program>>();
 
-                var discordClient = serviceProvider.GetRequiredService<DiscordSocketClient>();
+                    // Configure command handler
+                    var commandHandlerService = services.GetRequiredService<CommandHandlerService>();
+                    await commandHandlerService.InitializeAsync();
 
-                // Configure logging
-                // TODO: Improve this to make sure log levels etc are respected and the correct targets are logged. This is very crude here
-                discordClient.Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
-                serviceProvider.GetRequiredService<CommandService>().Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
+                    var discordClient = services.GetRequiredService<DiscordSocketClient>();
 
-                // Configure initialization handlers
-                discordClient.Ready += async () => await discordClient.SetGameAsync("with fire");
+                    // Configure logging
+                    // TODO: Improve this to make sure log levels etc are respected and the correct targets are logged. This is very crude here
+                    discordClient.Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
+                    services.GetRequiredService<CommandService>().Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
 
-                // Connect and start client
-                logger.LogInformation("Connecting to Discord");
-                await discordClient.LoginAsync(TokenType.Bot, configuration.GetValue<string>("Core:loginToken"));
-                logger.LogInformation("Starting client");
-                await discordClient.StartAsync();
+                    // Configure initialization handlers
+                    discordClient.Ready += async () => await discordClient.SetGameAsync("with fire");
 
-                // Run until closed
-                await Task.Delay(-1);
+                    // Connect and start client
+                    logger.LogInformation("Connecting to Discord");
+                    await discordClient.LoginAsync(TokenType.Bot, configuration.GetValue<string>("Core:loginToken"));
+                    logger.LogInformation("Starting client");
+                    await discordClient.StartAsync();
+
+                    // Run until closed
+                    await Task.Delay(-1);
+                }
             }
         }
 
