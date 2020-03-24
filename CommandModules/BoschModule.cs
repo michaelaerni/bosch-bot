@@ -17,7 +17,7 @@ namespace BoschBot.CommandModules
         private readonly IConfiguration configuration;
         private readonly ILogger logger;
         private readonly IMemoryCache cache;
-        private Random random;
+        private readonly Random random;
 
         public BoschModule(
             IConfiguration configuration,

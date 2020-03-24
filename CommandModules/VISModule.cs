@@ -11,7 +11,7 @@ namespace BoschBot.CommandModules
     {
         private readonly IConfiguration configuration;
         private readonly ILogger logger;
-        private Random random;
+        private readonly Random random;
 
         public VISModule(
             IConfiguration configuration,

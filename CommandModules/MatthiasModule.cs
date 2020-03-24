@@ -18,7 +18,7 @@ namespace BoschBot.CommandModules
         private readonly IConfiguration configuration;
         private readonly ILogger logger;
         private readonly IMemoryCache cache;
-        private Random random;
+        private readonly Random random;
         private readonly Font memeFont;
         private readonly Font superMemeFont;
 
@@ -31,7 +31,6 @@ namespace BoschBot.CommandModules
             this.configuration = configuration;
             this.logger = logger;
             this.cache = cache;
-            this.random = new Random();
             this.memeFont = SystemFonts.CreateFont("Liberation Sans", 42, SixLabors.Fonts.FontStyle.Bold); // TODO: Use config value or handle differently
             this.superMemeFont = SystemFonts.CreateFont("Comic Relief", 42, SixLabors.Fonts.FontStyle.Bold); // TODO: Use config value or handle differently
         }
