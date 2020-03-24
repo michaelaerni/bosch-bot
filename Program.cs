@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using BoschBot.Services;
 using Discord;
@@ -67,7 +68,10 @@ namespace BoschBot
 
             services.AddSingleton(configuration);
 
-            services.AddLogging(config => config.AddConsole());
+            services.AddLogging(config => config
+                .AddConfiguration(configuration.GetSection("Logging"))
+                .AddConsole()
+            );
 
             services.AddMemoryCache();
 
