@@ -5,6 +5,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BoschBot
@@ -60,6 +61,8 @@ namespace BoschBot
 
             // Search and execute command
             var context = new SocketCommandContext(discordClient, message);
+
+            // TODO: This does currently not support service scopes for async commands because the scope will be disposed before the command executes. The scoped needs to be created and disposed inside the actual command execution which happens deep in the library.
             await commandService.ExecuteAsync(context, argsPosition, serviceProvider);
         }
 
