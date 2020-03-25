@@ -4,6 +4,9 @@
 # Ignore local environment files
 .env
 
+# Ignore SQLite databases
+/*.db
+
 
 # Created by https://www.gitignore.io/api/linux,dotnetcore,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=linux,dotnetcore,visualstudiocode

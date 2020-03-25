@@ -75,6 +75,8 @@ namespace BoschBot
 
             services.AddMemoryCache();
 
+            services.AddDbContext<BotDbContext>();
+
             services.AddSingleton<DiscordSocketClient>();
             services.AddSingleton<CommandService>();
             services.AddSingleton<CommandHandlerService>();
