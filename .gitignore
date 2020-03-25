@@ -5,7 +5,7 @@
 .env
 
 # Ignore SQLite databases
-/*.db
+/*.db*
 
 
 # Created by https://www.gitignore.io/api/linux,dotnetcore,visualstudiocode
