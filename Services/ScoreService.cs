@@ -18,7 +18,6 @@ namespace BoschBot.Services
             BotDbContext dbContext
         )
         {
-            // TODO: Since scoped dependency injection is not working correctly with async commands, the behaviour here is partially not as expected
             this.configuration = configuration;
             this.logger = logger;
             this.dbContext = dbContext;
