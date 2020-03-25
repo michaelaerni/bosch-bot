@@ -18,6 +18,7 @@ namespace BoschBot.Services
             BotDbContext dbContext
         )
         {
+            // TODO: Since scoped dependency injection is not working correctly with async commands, the behaviour here is partially not as expected
             this.configuration = configuration;
             this.logger = logger;
             this.dbContext = dbContext;
@@ -31,8 +32,50 @@ namespace BoschBot.Services
 
         public async Task<ulong> ClaimDailyScoreAsync(ulong userID)
         {
-            // TODO: Implement
-            throw new NotImplementedException();
+            DateTime now = DateTime.UtcNow;
+
+            await using(var transaction = await dbContext.Database.BeginTransactionAsync())
+            {
+                var user = await FindOrCreateUser(userID);
+
+                if(user.LastDailyClaimed == null)
+                {
+                    // First time claim
+                    user.LastDailyClaimed = now;
+                    user.Score = 1;
+                    user.CurrentDailyStreak = 1;
+                }
+                else
+                {
+                    // Check whether last claim was yesterday or earlier
+                    if(now.Date == user.LastDailyClaimed?.Date)
+                    {
+                        throw new ScoreAlreadyClaimedException();
+                    }
+
+                    // Calculate additional points based on streak
+                    if(now.Date.Subtract(user.LastDailyClaimed.Value.Date).TotalDays <= 1)
+                    {
+                        // Streak going
+                        ++user.CurrentDailyStreak;
+                    }
+                    else
+                    {
+                        // Streak reset
+                        user.CurrentDailyStreak = 1;
+                    }
+
+                    // Update score based on streak
+                    user.Score += (ulong)Math.Ceiling(Math.Log2(user.CurrentDailyStreak));
+                    user.LastDailyClaimed = now;
+                }
+
+                // Optimistic concurrency: If score was updated in the meantime (i.e. already claimed) transaction fails
+                await dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return user.CurrentDailyStreak;
+            }
         }
 
         private async Task<UserScore> FindOrCreateUser(ulong userID)
@@ -40,7 +83,7 @@ namespace BoschBot.Services
             var existingUser = await dbContext.UserScores.FindAsync(userID);
             if(existingUser == null)
             {
-                // Optimistic concurrency: Concurrent creations result in crash since user ID is unique
+                // Optimistic concurrency: Concurrent creations result in exception since user ID is unique
                 await dbContext.AddAsync(new UserScore(userID));
                 await dbContext.SaveChangesAsync();
 
