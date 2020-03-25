@@ -80,9 +80,9 @@ namespace BoschBot
             services.AddSingleton<DiscordSocketClient>();
             services.AddSingleton<CommandService>();
             services.AddSingleton<CommandHandlerService>();
-
             // FIXME: Define retry policy etc, see https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests
             services.AddHttpClient<ITexRenderService, TexRenderService>();
+            services.AddSingleton<IScoreService, ScoreService>();
 
             return services.BuildServiceProvider();
         }
