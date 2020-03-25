@@ -28,37 +28,32 @@ namespace BoschBot
             IConfiguration configuration = SetupConfiguration(args);
 
             // Setup dependency injection
-            using(ServiceProvider rootProvider = RegisterServices(configuration))
+            using(ServiceProvider services = RegisterServices(configuration))
             {
-                using(var serviceScope = rootProvider.CreateScope())
-                {
-                    var services = serviceScope.ServiceProvider;
+                var logger = services.GetRequiredService<ILogger<Program>>();
 
-                    var logger = services.GetRequiredService<ILogger<Program>>();
+                // Configure command handler
+                var commandHandlerService = services.GetRequiredService<CommandHandlerService>();
+                await commandHandlerService.InitializeAsync();
 
-                    // Configure command handler
-                    var commandHandlerService = services.GetRequiredService<CommandHandlerService>();
-                    await commandHandlerService.InitializeAsync();
+                var discordClient = services.GetRequiredService<DiscordSocketClient>();
 
-                    var discordClient = services.GetRequiredService<DiscordSocketClient>();
+                // Configure logging
+                // TODO: Improve this to make sure log levels etc are respected and the correct targets are logged. This is very crude here
+                discordClient.Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
+                services.GetRequiredService<CommandService>().Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
 
-                    // Configure logging
-                    // TODO: Improve this to make sure log levels etc are respected and the correct targets are logged. This is very crude here
-                    discordClient.Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
-                    services.GetRequiredService<CommandService>().Log += message => { logger.LogInformation(message.ToString()); return Task.CompletedTask; };
+                // Configure initialization handlers
+                discordClient.Ready += async () => await discordClient.SetGameAsync("with fire");
 
-                    // Configure initialization handlers
-                    discordClient.Ready += async () => await discordClient.SetGameAsync("with fire");
+                // Connect and start client
+                logger.LogInformation("Connecting to Discord");
+                await discordClient.LoginAsync(TokenType.Bot, configuration.GetValue<string>("Core:loginToken"));
+                logger.LogInformation("Starting client");
+                await discordClient.StartAsync();
 
-                    // Connect and start client
-                    logger.LogInformation("Connecting to Discord");
-                    await discordClient.LoginAsync(TokenType.Bot, configuration.GetValue<string>("Core:loginToken"));
-                    logger.LogInformation("Starting client");
-                    await discordClient.StartAsync();
-
-                    // Run until closed
-                    await Task.Delay(-1);
-                }
+                // Run until closed
+                await Task.Delay(-1);
             }
         }
 
@@ -82,7 +77,7 @@ namespace BoschBot
             services.AddSingleton<CommandHandlerService>();
             // FIXME: Define retry policy etc, see https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests
             services.AddHttpClient<ITexRenderService, TexRenderService>();
-            services.AddSingleton<IScoreService, ScoreService>();
+            services.AddScoped<IScoreService, ScoreService>();
 
             return services.BuildServiceProvider();
         }
