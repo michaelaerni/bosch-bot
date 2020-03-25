@@ -18,7 +18,6 @@ namespace BoschBot.CommandModules
         private readonly IConfiguration configuration;
         private readonly ILogger logger;
         private readonly IMemoryCache cache;
-        private readonly Random random;
         private readonly Font memeFont;
         private readonly Font superMemeFont;
 
