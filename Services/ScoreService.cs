@@ -23,6 +23,8 @@ namespace BoschBot.Services
             this.dbContext = dbContext;
         }
 
+        // TODO: Add functionality to transfer scores between users
+
         public async Task<ulong> ReadUserScoreAsync(ulong userID)
         {
             var user = await FindOrCreateUser(userID);
@@ -37,11 +39,15 @@ namespace BoschBot.Services
             {
                 var user = await FindOrCreateUser(userID);
 
+                // FIXME: Can combine the two cases to be more similar, i.e. handle no streak and never claimed equally
+                // FIXME: Make base score multiplier configurable
+                const ulong BASE_SCORE_MULTIPLIER = 100;
+
                 if(user.LastDailyClaimed == null)
                 {
                     // First time claim
                     user.LastDailyClaimed = now;
-                    user.Score = 1;
+                    user.Score = BASE_SCORE_MULTIPLIER;
                     user.CurrentDailyStreak = 1;
                 }
                 else
@@ -65,7 +71,7 @@ namespace BoschBot.Services
                     }
 
                     // Update score based on streak
-                    user.Score += (ulong)Math.Ceiling(Math.Log2(user.CurrentDailyStreak));
+                    user.Score += (ulong)Math.Floor(1 + Math.Log2(user.CurrentDailyStreak)) * BASE_SCORE_MULTIPLIER;
                     user.LastDailyClaimed = now;
                 }
 
