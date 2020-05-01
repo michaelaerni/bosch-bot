@@ -1,0 +1,18 @@
+# Ignore all images
+images/*
+
+# Ignore local environment files
+.env
+
+# Ignore SQLite databases
+/*.db*
+
+# .NET Core build folders
+/bin
+/obj
+
+# VisualStudioCode
+.vscode/*
+
+# Ignore all local history of files
+.history

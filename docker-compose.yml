@@ -1,0 +1,12 @@
+version: "3.7"
+services:
+  bot:
+    image: bosch-bot:0.1.0
+    restart: always
+    volumes:
+        - ./data/:/app/data
+        - ./images/:/app/images
+    environment:
+        - ConnectionStrings__Default=Data Source=/app/data/bot.db
+    env_file:
+      - bot.env
