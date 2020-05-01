@@ -19,7 +19,6 @@ namespace BoschBot.CommandModules
         private readonly ILogger logger;
         private readonly IMemoryCache cache;
         private readonly Font memeFont;
-        private readonly Font superMemeFont;
 
         public MatthiasModule(
             IConfiguration configuration,
@@ -31,7 +30,6 @@ namespace BoschBot.CommandModules
             this.logger = logger;
             this.cache = cache;
             this.memeFont = SystemFonts.CreateFont("Liberation Sans", 42, SixLabors.Fonts.FontStyle.Bold); // TODO: Use config value or handle differently
-            this.superMemeFont = SystemFonts.CreateFont("Comic Relief", 42, SixLabors.Fonts.FontStyle.Bold); // TODO: Use config value or handle differently
         }
 
         [Command("matthias")]
@@ -39,13 +37,6 @@ namespace BoschBot.CommandModules
         {
             logger.LogDebug("Handling meme command");
             await HandleMemeRequest(caption, memeFont);
-        }
-
-        [Command("matthisans")]
-        public async Task SuperMemeAsync([Remainder] string caption)
-        {
-            logger.LogDebug("Handling super meme command");
-            await HandleMemeRequest(caption, superMemeFont);
         }
 
         private async Task HandleMemeRequest(string caption, Font font)
